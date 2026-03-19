@@ -169,21 +169,12 @@ const steps: Step[] = [
     id: 'portfolio',
     bg: 'var(--color-brand-soft)',
     content: () => (
-      <div className="flex flex-col items-center justify-center h-full max-w-5xl mx-auto px-8">
-        <div className="text-center mb-8">
-          <span className="text-[var(--color-primary)] text-xs font-semibold tracking-[0.3em] uppercase">Portfolio</span>
-          <h2 className="text-4xl lg:text-5xl font-black serif-heading uppercase text-[var(--color-brand-brown)] mt-2">Wideo UGC</h2>
-          <div className="flex items-center justify-center gap-3 mt-4 mb-2">
-            <div className="w-8 h-[2px] bg-[var(--color-primary)]/30" />
-            <div className="w-2 h-2 bg-[var(--color-primary)]/20 blob-shape" />
-            <div className="w-8 h-[2px] bg-[var(--color-primary)]/30" />
-          </div>
-          <p className="text-[var(--color-brand-brown)]/30 text-xs tracking-[0.15em] uppercase mt-3 flex items-center justify-center gap-2">
-            <span className="material-symbols-outlined text-sm">play_circle</span>
-            kliknij aby odtworzyć
-          </p>
-        </div>
-        <div className="grid grid-cols-4 gap-4 w-full">
+      <div className="flex flex-col items-center justify-center h-full w-full px-10">
+        <p className="text-[var(--color-brand-brown)]/30 text-xs tracking-[0.15em] uppercase mb-6 flex items-center gap-2">
+          <span className="material-symbols-outlined text-sm">play_circle</span>
+          kliknij aby odtworzyć
+        </p>
+        <div className="grid grid-cols-4 gap-5 w-full" style={{ height: '70vh' }}>
           {[1,2,3,4].map(i => (
             <VideoThumb key={i} src={`/videos/ugc-${i}.mp4`} />
           ))}
@@ -196,15 +187,12 @@ const steps: Step[] = [
     id: 'portfolio-2',
     bg: 'var(--color-brand-cream)',
     content: () => (
-      <div className="flex flex-col items-center justify-center h-full max-w-5xl mx-auto px-8">
-        <div className="text-center mb-8">
-          <h2 className="text-4xl lg:text-5xl font-black serif-heading uppercase text-[var(--color-brand-brown)]">Więcej treści</h2>
-          <p className="text-[var(--color-brand-brown)]/30 text-xs tracking-[0.15em] uppercase mt-4 flex items-center justify-center gap-2">
-            <span className="material-symbols-outlined text-sm">play_circle</span>
-            kliknij aby odtworzyć
-          </p>
-        </div>
-        <div className="grid grid-cols-4 gap-4 w-full">
+      <div className="flex flex-col items-center justify-center h-full w-full px-10">
+        <p className="text-[var(--color-brand-brown)]/30 text-xs tracking-[0.15em] uppercase mb-6 flex items-center gap-2">
+          <span className="material-symbols-outlined text-sm">play_circle</span>
+          kliknij aby odtworzyć
+        </p>
+        <div className="grid grid-cols-4 gap-5 w-full" style={{ height: '70vh' }}>
           {[5,6,7,8].map(i => (
             <VideoThumb key={i} src={`/videos/ugc-${i}.mp4`} />
           ))}
@@ -257,9 +245,8 @@ function VideoThumb({ src }: { src: string }) {
     <button
       type="button"
       onClick={() => _setOpenVideo?.(src)}
-      className="aspect-[9/16] relative cursor-pointer block w-full group"
+      className="relative cursor-pointer block w-full h-full group"
     >
-      {/* Inner card — this moves on hover, but button (hit area) stays in place */}
       <div className="absolute inset-0 bg-neutral-900 rounded-2xl overflow-hidden transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-2xl group-hover:shadow-[var(--color-primary)]/20 group-hover:ring-2 group-hover:ring-[var(--color-primary)]/40">
         <video
           src={src}
