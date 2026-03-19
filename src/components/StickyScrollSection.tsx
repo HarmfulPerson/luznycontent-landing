@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState, useRef, useEffect, FormEvent } from 'react';
+import { ReactNode, useState, useRef, useEffect, useMemo, memo, FormEvent } from 'react';
 import Image from 'next/image';
 import { useStickyScroll } from '@/hooks/useStickyScroll';
 import InstagramIcon from './InstagramIcon';
@@ -495,6 +495,51 @@ function AnimatedBlobs({ containerRef }: { containerRef: React.RefObject<HTMLDiv
   );
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// STEP LAYERS — content rendered once, only transform/opacity changes
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Each step's content is rendered once and memoized
+const StepContent = memo(function StepContent({ index }: { index: number }) {
+  const Content = steps[index].content;
+  return <Content />;
+});
+
+function StepLayers({ activeStep }: { activeStep: number }) {
+  // Render all steps once — they stay mounted, only CSS changes
+  return (
+    <>
+      {steps.map((step, i) => {
+        const isCurrent = i === activeStep;
+        const isPast = i < activeStep;
+        const isNear = Math.abs(i - activeStep) <= 1;
+
+        return (
+          <div key={i}
+            className="absolute inset-0 flex items-center justify-center"
+            style={{
+              opacity: isCurrent ? 1 : 0,
+              transform: isCurrent
+                ? 'translateX(0) rotate(0deg) scale(1) translateZ(0)'
+                : isPast
+                  ? 'translateX(-120px) rotate(-3deg) scale(0.92) translateZ(0)'
+                  : 'translateX(120px) rotate(3deg) scale(0.92) translateZ(0)',
+              pointerEvents: isCurrent ? 'auto' : 'none',
+              color: step.bg === 'var(--color-brand-dark)' ? 'white' : 'var(--color-brand-dark)',
+              transition: 'opacity 700ms cubic-bezier(0.4,0,0.2,1), transform 700ms cubic-bezier(0.4,0,0.2,1)',
+              visibility: isNear ? 'visible' : 'hidden',
+            }}
+          >
+            <div className="w-full h-full flex items-center justify-center">
+              <StepContent index={i} />
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 export default function StickyScrollSection() {
   const { containerRef, activeStep, stepProgress } = useStickyScroll(steps.length, 100);
   const isDark = steps[activeStep]?.bg === 'var(--color-brand-dark)';
@@ -526,35 +571,9 @@ export default function StickyScrollSection() {
 
             <StepDots count={steps.length} active={activeStep} isDark={isDark} />
 
-            {/* Content layers — odchodzące lecą w lewo, nowe wjeżdżają z prawej */}
+            {/* Content layers — pre-rendered, only visibility/transform changes */}
             <div className="relative z-20 h-full">
-              {steps.map((step, i) => {
-                const isCurrent = i === activeStep;
-                const isPast = i < activeStep;
-
-                return (
-                  <div key={i}
-                    className="absolute inset-0 flex items-center justify-center ease-[cubic-bezier(0.4,0,0.2,1)]"
-                    style={{
-                      opacity: isCurrent ? 1 : 0,
-                      transform: isCurrent
-                        ? 'translateX(0) rotate(0deg) scale(1) translateZ(0)'
-                        : isPast
-                          ? 'translateX(-120px) rotate(-3deg) scale(0.92) translateZ(0)'
-                          : 'translateX(120px) rotate(3deg) scale(0.92) translateZ(0)',
-                      pointerEvents: isCurrent ? 'auto' : 'none',
-                      color: step.bg === 'var(--color-brand-dark)' ? 'white' : 'var(--color-brand-dark)',
-                      transition: 'opacity 700ms, transform 700ms',
-                      willChange: isCurrent ? 'auto' : 'opacity, transform',
-                      visibility: isCurrent || Math.abs(i - activeStep) <= 1 ? 'visible' : 'hidden',
-                    }}
-                  >
-                    <div className="w-full h-full flex items-center justify-center">
-                      <step.content />
-                    </div>
-                  </div>
-                );
-              })}
+              <StepLayers activeStep={activeStep} />
             </div>
           </div>
         </div>
