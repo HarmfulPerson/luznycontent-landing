@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-primary: #6B9FD4;
+  --color-primary-dark: #5889BA;
+  --color-brand-brown: #6B5A4E;
+  --color-brand-dark: #4A3F37;
+  --color-brand-cream: #E8E0D4;
+  --color-brand-soft: #F0EBE3;
+  --color-brand-beige: #D8D0C4;
+  --font-display: 'Work Sans', sans-serif;
+  --font-serif: 'Playfair Display', serif;
+  --font-logo: 'Bodoni Moda', serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  background: var(--color-brand-soft);
+  color: var(--color-brand-dark);
+  font-family: var(--font-display);
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(107, 159, 212, 0.3);
+}
+
+.serif-heading {
+  font-family: var(--font-serif);
+}
+
+/* Logo font — organic, high-contrast serif matching the fluid letterforms */
+.logo-font {
+  font-family: var(--font-logo);
+  font-weight: 900;
+  font-style: italic;
+}
+
+/* Organic blob shapes inspired by the logo's fluid letterforms */
+.blob-shape {
+  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+}
+
+.blob-shape-2 {
+  border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+}
+
+/* Logo-style spaced caps for "CONTENT" */
+.spaced-caps {
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  font-weight: 500;
+  font-family: var(--font-display);
+}
