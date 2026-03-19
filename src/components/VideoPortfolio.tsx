@@ -45,6 +45,7 @@ function VideoCard({ video, index, isVisible }: { video: VideoItem; index: numbe
         >
           <video
             src={video.src}
+            poster={`/videos/thumb-${video.id}.jpg`}
             muted
             playsInline
             preload="metadata"

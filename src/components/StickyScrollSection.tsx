@@ -305,7 +305,7 @@ function VideoSwapCards() {
                     transition: 'opacity 300ms ease, transform 300ms ease',
                   }}
                 >
-                  <video src={`/videos/ugc-${num}.mp4`} muted playsInline preload="metadata"
+                  <video src={`/videos/ugc-${num}.mp4`} poster={`/videos/thumb-${num}.jpg`} muted playsInline preload="metadata"
                     className="absolute inset-0 w-full h-full object-cover" style={{ pointerEvents: 'none' }} />
                   <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/30 pointer-events-none" />
                   {/* Subtle play icon — small, transparent */}
