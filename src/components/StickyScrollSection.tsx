@@ -168,37 +168,13 @@ const steps: Step[] = [
   {
     id: 'portfolio',
     bg: 'var(--color-brand-soft)',
-    content: () => (
-      <div className="flex flex-col items-center justify-center h-full w-full px-10">
-        <p className="text-[var(--color-brand-brown)]/30 text-xs tracking-[0.15em] uppercase mb-6 flex items-center gap-2">
-          <span className="material-symbols-outlined text-sm">play_circle</span>
-          kliknij aby odtworzyć
-        </p>
-        <div className="grid grid-cols-4 gap-5 w-full" style={{ height: '70vh' }}>
-          {[1,2,3,4].map(i => (
-            <VideoThumb key={i} src={`/videos/ugc-${i}.mp4`} />
-          ))}
-        </div>
-      </div>
-    ),
+    content: () => <VideoGrid videos={[1,2,3,4]} title="Wideo UGC" />,
   },
   // ── 4b. Video portfolio (page 2) ──
   {
     id: 'portfolio-2',
     bg: 'var(--color-brand-cream)',
-    content: () => (
-      <div className="flex flex-col items-center justify-center h-full w-full px-10">
-        <p className="text-[var(--color-brand-brown)]/30 text-xs tracking-[0.15em] uppercase mb-6 flex items-center gap-2">
-          <span className="material-symbols-outlined text-sm">play_circle</span>
-          kliknij aby odtworzyć
-        </p>
-        <div className="grid grid-cols-4 gap-5 w-full" style={{ height: '70vh' }}>
-          {[5,6,7,8].map(i => (
-            <VideoThumb key={i} src={`/videos/ugc-${i}.mp4`} />
-          ))}
-        </div>
-      </div>
-    ),
+    content: () => <VideoGrid videos={[5,6,7,8]} title="Więcej treści" />,
   },
   // ── 5. Photo portfolio ──
   {
@@ -233,37 +209,115 @@ const steps: Step[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
-// VIDEO THUMBNAIL — big cards, autoplay with sound on hover
+// VIDEO GRID + THUMB — 3D perspective cards with staggered hover
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Shared state for which video is playing — avoids per-thumbnail state bugs
-let _openVideoSrc: string | null = null;
 let _setOpenVideo: ((src: string | null) => void) | null = null;
 
-function VideoThumb({ src }: { src: string }) {
+// Each card has a unique tilt direction for the idle "fan" effect
+const cardTilts = [
+  { rotateY: -4, rotateZ: -1.5, y: 8 },
+  { rotateY: -1.5, rotateZ: 0.5, y: -4 },
+  { rotateY: 1.5, rotateZ: -0.5, y: -4 },
+  { rotateY: 4, rotateZ: 1.5, y: 8 },
+];
+
+function VideoGrid({ videos, title }: { videos: number[]; title: string }) {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+
   return (
-    <button
-      type="button"
-      onClick={() => _setOpenVideo?.(src)}
-      className="relative cursor-pointer block w-full h-full group"
-    >
-      <div className="absolute inset-0 bg-neutral-900 rounded-2xl overflow-hidden transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-2xl group-hover:shadow-[var(--color-primary)]/20 group-hover:ring-2 group-hover:ring-[var(--color-primary)]/40">
-        <video
-          src={src}
-          muted
-          playsInline
-          preload="metadata"
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ pointerEvents: 'none' }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-xl backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
-            <span className="material-symbols-outlined text-[var(--color-primary)] text-2xl ml-0.5">play_arrow</span>
-          </div>
-        </div>
+    <div className="flex flex-col items-center justify-center h-full w-full px-12">
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-black serif-heading uppercase text-[var(--color-brand-brown)]">{title}</h2>
+        <p className="text-[var(--color-brand-brown)]/25 text-[10px] tracking-[0.2em] uppercase mt-2 flex items-center justify-center gap-1.5">
+          <span className="material-symbols-outlined text-xs">play_circle</span>
+          kliknij aby odtworzyć
+        </p>
       </div>
-    </button>
+
+      <div
+        className="grid grid-cols-4 gap-6 w-full"
+        style={{ height: '65vh', perspective: '1200px' }}
+        onMouseLeave={() => setHoveredIdx(null)}
+      >
+        {videos.map((num, i) => {
+          const isHovered = hoveredIdx === i;
+          const hasHover = hoveredIdx !== null;
+          const isNeighbor = hoveredIdx !== null && Math.abs(i - hoveredIdx) === 1;
+          const tilt = cardTilts[i] ?? cardTilts[0];
+
+          return (
+            <button
+              key={num}
+              type="button"
+              onClick={() => _setOpenVideo?.(`/videos/ugc-${num}.mp4`)}
+              onMouseEnter={() => setHoveredIdx(i)}
+              className="relative cursor-pointer block w-full h-full"
+              style={{ perspective: '800px' }}
+            >
+              <div
+                className="absolute inset-0 bg-neutral-900 rounded-2xl overflow-hidden"
+                style={{
+                  transition: 'transform 600ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 400ms ease, filter 400ms ease',
+                  transform: isHovered
+                    ? 'rotateY(0deg) rotateX(0deg) scale(1.06) translateY(-12px) translateZ(40px)'
+                    : hasHover && !isNeighbor
+                      ? `rotateY(${tilt.rotateY * 2}deg) scale(0.88) translateY(${tilt.y * 2}px) translateZ(-60px)`
+                      : hasHover && isNeighbor
+                        ? `rotateY(${tilt.rotateY}deg) scale(0.95) translateY(${tilt.y}px) translateZ(-20px)`
+                        : `rotateY(${tilt.rotateY}deg) rotateZ(${tilt.rotateZ}deg) translateY(${tilt.y}px) scale(1)`,
+                  boxShadow: isHovered
+                    ? '0 40px 80px rgba(0,0,0,0.3), 0 0 0 2px var(--color-primary)'
+                    : hasHover && !isNeighbor
+                      ? '0 5px 20px rgba(0,0,0,0.1)'
+                      : '0 15px 40px rgba(0,0,0,0.15)',
+                  filter: hasHover && !isHovered ? `brightness(${isNeighbor ? 0.85 : 0.7})` : 'brightness(1)',
+                  transformStyle: 'preserve-3d',
+                }}
+              >
+                <video
+                  src={`/videos/ugc-${num}.mp4`}
+                  muted
+                  playsInline
+                  preload="metadata"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{ pointerEvents: 'none' }}
+                />
+
+                {/* Gradient */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/30 pointer-events-none" />
+
+                {/* Play button — grows on hover */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div
+                    className="bg-white/90 rounded-full flex items-center justify-center shadow-xl backdrop-blur-sm"
+                    style={{
+                      width: isHovered ? '56px' : '44px',
+                      height: isHovered ? '56px' : '44px',
+                      transition: 'all 400ms cubic-bezier(0.34,1.56,0.64,1)',
+                      transform: isHovered ? 'scale(1)' : hasHover && !isNeighbor ? 'scale(0.7)' : 'scale(0.85)',
+                      opacity: isHovered ? 1 : hasHover && !isNeighbor ? 0.4 : 0.8,
+                    }}
+                  >
+                    <span className="material-symbols-outlined text-[var(--color-primary)] text-2xl ml-0.5">play_arrow</span>
+                  </div>
+                </div>
+
+                {/* Shine reflection on hover */}
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.08) 45%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 55%, transparent 60%)',
+                    opacity: isHovered ? 1 : 0,
+                    transition: 'opacity 600ms ease',
+                  }}
+                />
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
