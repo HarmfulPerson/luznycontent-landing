@@ -14,6 +14,7 @@ import VideoPlayer from './VideoPlayer';
 interface Step {
   id: string;
   bg: string;
+  weight?: number; // scroll units (default 1 = 100vh)
   content: () => ReactNode;
 }
 
@@ -164,17 +165,12 @@ const steps: Step[] = [
       );
     },
   },
-  // ── 4. Video portfolio (page 1) ──
+  // ── 4. Video portfolio — cards swap one by one via scroll (5x scroll runway) ──
   {
     id: 'portfolio',
     bg: 'var(--color-brand-soft)',
-    content: () => <VideoGrid videos={[1,2,3,4]} title="Wideo UGC" />,
-  },
-  // ── 4b. Video portfolio (page 2) ──
-  {
-    id: 'portfolio-2',
-    bg: 'var(--color-brand-cream)',
-    content: () => <VideoGrid videos={[5,6,7,8]} title="Więcej treści" />,
+    weight: 7,
+    content: () => <VideoSwapCards />,
   },
   // ── 5. Photo portfolio ──
   {
@@ -214,108 +210,131 @@ const steps: Step[] = [
 
 let _setOpenVideo: ((src: string | null) => void) | null = null;
 
-// Each card has a unique tilt direction for the idle "fan" effect
-const cardTilts = [
-  { rotateY: -4, rotateZ: -1.5, y: 8 },
-  { rotateY: -1.5, rotateZ: 0.5, y: -4 },
-  { rotateY: 1.5, rotateZ: -0.5, y: -4 },
-  { rotateY: 4, rotateZ: 1.5, y: 8 },
-];
+// All 8 videos as a conveyor belt — visible window of 4 at a time.
+// stepProgress 0→1 maps to offset 0→4 (shift 4 cards through).
+// Each card shift = one "scroll unit" worth of scrolling (weight=5, so 5 units total,
+// 4 for swaps + 0.5 idle start + 0.5 idle end).
 
-function VideoGrid({ videos, title }: { videos: number[]; title: string }) {
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+const allVideos = [1, 2, 3, 4, 5, 6, 7, 8];
+
+function VideoSwapCards() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const container = document.querySelector('[data-sticky-container]') as HTMLElement | null;
+    if (!container) return;
+
+    // Build weighted breakpoints to find our step's local progress
+    const w = steps.map(s => s.weight ?? 1);
+    const total = w.reduce((a, b) => a + b, 0);
+    const portfolioIdx = steps.findIndex(s => s.id === 'portfolio');
+    let startFrac = 0;
+    for (let i = 0; i < portfolioIdx; i++) startFrac += w[i];
+    startFrac /= total;
+    const endFrac = startFrac + (w[portfolioIdx] / total);
+
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const rect = container.getBoundingClientRect();
+        const h = container.offsetHeight - window.innerHeight;
+        if (h <= 0) { ticking = false; return; }
+        const globalProgress = Math.max(0, Math.min(1, -rect.top / h));
+        const local = (globalProgress - startFrac) / (endFrac - startFrac);
+        setProgress(Math.max(0, Math.min(1, local)));
+        ticking = false;
+      });
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // progress 0→1 within this step (weight=7)
+  // 0.00–0.18: idle on entry (first 4 visible, no movement)
+  // 0.18–0.82: shift cards (0→4 offset, one per ~16%)
+  // 0.82–1.00: idle on exit (last 4 visible)
+  const IDLE_START = 0.18;
+  const IDLE_END = 0.82;
+  const rawOffset = progress <= IDLE_START ? 0
+    : progress >= IDLE_END ? 4
+    : ((progress - IDLE_START) / (IDLE_END - IDLE_START)) * 4;
+  const offset = Math.max(0, Math.min(4, rawOffset));
+
+  const GAP = 20;
+  const PADDING = 48; // px padding on each side
 
   return (
-    <div className="flex flex-col items-center justify-center h-full w-full px-12">
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-black serif-heading uppercase text-[var(--color-brand-brown)]">{title}</h2>
+    <div className="flex flex-col items-center justify-center h-full w-full overflow-hidden">
+      <div className="text-center mb-5">
+        <h2 className="text-2xl font-black serif-heading uppercase text-[var(--color-brand-brown)]">Wideo UGC</h2>
         <p className="text-[var(--color-brand-brown)]/25 text-[10px] tracking-[0.2em] uppercase mt-2 flex items-center justify-center gap-1.5">
           <span className="material-symbols-outlined text-xs">play_circle</span>
           kliknij aby odtworzyć
         </p>
       </div>
 
-      <div
-        className="grid grid-cols-4 gap-6 w-full"
-        style={{ height: '65vh', perspective: '1200px' }}
-        onMouseLeave={() => setHoveredIdx(null)}
-      >
-        {videos.map((num, i) => {
-          const isHovered = hoveredIdx === i;
-          const hasHover = hoveredIdx !== null;
-          const isNeighbor = hoveredIdx !== null && Math.abs(i - hoveredIdx) === 1;
-          const tilt = cardTilts[i] ?? cardTilts[0];
+      {/* Outer clip — hides overflow */}
+      <div className="relative w-full overflow-hidden" style={{ height: '58vh' }}>
+        {/* Inner — with horizontal margins so cards don't touch edges */}
+        <div className="absolute inset-0" style={{ left: '5%', right: '5%', width: '90%' }}>
+          {allVideos.map((num, i) => {
+            const slotPosition = i - offset;
+            const isInView = slotPosition >= -0.5 && slotPosition < 4.5;
 
-          return (
-            <button
-              key={num}
-              type="button"
-              onClick={() => _setOpenVideo?.(`/videos/ugc-${num}.mp4`)}
-              onMouseEnter={() => setHoveredIdx(i)}
-              className="relative cursor-pointer block w-full h-full"
-              style={{ perspective: '800px' }}
-            >
-              <div
-                className="absolute inset-0 bg-neutral-900 rounded-2xl overflow-hidden"
+            return (
+              <button
+                key={num}
+                type="button"
+                onClick={() => _setOpenVideo?.(`/videos/ugc-${num}.mp4`)}
+                className="absolute top-0 cursor-pointer group"
                 style={{
-                  transition: 'transform 600ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 400ms ease, filter 400ms ease',
-                  transform: isHovered
-                    ? 'rotateY(0deg) rotateX(0deg) scale(1.06) translateY(-12px) translateZ(40px)'
-                    : hasHover && !isNeighbor
-                      ? `rotateY(${tilt.rotateY * 2}deg) scale(0.88) translateY(${tilt.y * 2}px) translateZ(-60px)`
-                      : hasHover && isNeighbor
-                        ? `rotateY(${tilt.rotateY}deg) scale(0.95) translateY(${tilt.y}px) translateZ(-20px)`
-                        : `rotateY(${tilt.rotateY}deg) rotateZ(${tilt.rotateZ}deg) translateY(${tilt.y}px) scale(1)`,
-                  boxShadow: isHovered
-                    ? '0 40px 80px rgba(0,0,0,0.3), 0 0 0 2px var(--color-primary)'
-                    : hasHover && !isNeighbor
-                      ? '0 5px 20px rgba(0,0,0,0.1)'
-                      : '0 15px 40px rgba(0,0,0,0.15)',
-                  filter: hasHover && !isHovered ? `brightness(${isNeighbor ? 0.85 : 0.7})` : 'brightness(1)',
-                  transformStyle: 'preserve-3d',
+                  left: `calc(${slotPosition * 25}% + ${slotPosition * GAP * 0.75}px)`,
+                  width: `calc(25% - ${GAP}px)`,
+                  height: '100%',
                 }}
               >
-                <video
-                  src={`/videos/ugc-${num}.mp4`}
-                  muted
-                  playsInline
-                  preload="metadata"
-                  className="absolute inset-0 w-full h-full object-cover"
-                  style={{ pointerEvents: 'none' }}
-                />
-
-                {/* Gradient */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/30 pointer-events-none" />
-
-                {/* Play button — grows on hover */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div
-                    className="bg-white/90 rounded-full flex items-center justify-center shadow-xl backdrop-blur-sm"
-                    style={{
-                      width: isHovered ? '56px' : '44px',
-                      height: isHovered ? '56px' : '44px',
-                      transition: 'all 400ms cubic-bezier(0.34,1.56,0.64,1)',
-                      transform: isHovered ? 'scale(1)' : hasHover && !isNeighbor ? 'scale(0.7)' : 'scale(0.85)',
-                      opacity: isHovered ? 1 : hasHover && !isNeighbor ? 0.4 : 0.8,
-                    }}
-                  >
-                    <span className="material-symbols-outlined text-[var(--color-primary)] text-2xl ml-0.5">play_arrow</span>
-                  </div>
-                </div>
-
-                {/* Shine reflection on hover */}
                 <div
-                  className="absolute inset-0 pointer-events-none"
+                  className="absolute inset-0 bg-neutral-900 rounded-2xl overflow-hidden"
                   style={{
-                    background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.08) 45%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 55%, transparent 60%)',
-                    opacity: isHovered ? 1 : 0,
-                    transition: 'opacity 600ms ease',
+                    boxShadow: '0 15px 40px rgba(0,0,0,0.15)',
+                    opacity: isInView ? 1 : 0,
+                    transform: isInView ? 'scale(1)' : 'scale(0.8)',
+                    transition: 'opacity 300ms ease, transform 300ms ease',
                   }}
-                />
-              </div>
-            </button>
-          );
-        })}
+                >
+                  <video src={`/videos/ugc-${num}.mp4`} muted playsInline preload="metadata"
+                    className="absolute inset-0 w-full h-full object-cover" style={{ pointerEvents: 'none' }} />
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/30 pointer-events-none" />
+                  {/* Subtle play icon — small, transparent */}
+                  <div className="absolute bottom-4 right-4 pointer-events-none opacity-40 group-hover:opacity-80 transition-opacity duration-300">
+                    <div className="w-9 h-9 bg-white/70 rounded-full flex items-center justify-center backdrop-blur-sm">
+                      <span className="material-symbols-outlined text-[var(--color-brand-brown)]/80 text-lg ml-0.5">play_arrow</span>
+                    </div>
+                  </div>
+                  {/* Hover ring */}
+                  <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-[var(--color-primary)]/30 transition-colors duration-300 pointer-events-none" />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Progress dots */}
+      <div className="flex items-center gap-2 mt-5">
+        {allVideos.map((_, i) => (
+          <div key={i} className="rounded-full transition-all duration-300"
+            style={{
+              width: i >= Math.round(offset) && i < Math.round(offset) + 4 ? '12px' : '6px',
+              height: '6px',
+              background: i >= Math.round(offset) && i < Math.round(offset) + 4
+                ? 'var(--color-primary)' : 'var(--color-brand-brown)',
+              opacity: i >= Math.round(offset) && i < Math.round(offset) + 4 ? 0.6 : 0.12,
+            }} />
+        ))}
       </div>
     </div>
   );
@@ -589,8 +608,10 @@ function StepLayers({ activeStep }: { activeStep: number }) {
   );
 }
 
+const stepWeights = steps.map(s => s.weight ?? 1);
+
 export default function StickyScrollSection() {
-  const { containerRef, activeStep, stepProgress } = useStickyScroll(steps.length, 100);
+  const { containerRef, activeStep, stepProgress, totalHeightVh } = useStickyScroll(steps.length, stepWeights);
   const isDark = steps[activeStep]?.bg === 'var(--color-brand-dark)';
   const [openVideo, setOpenVideo] = useState<string | null>(null);
 
@@ -605,7 +626,8 @@ export default function StickyScrollSection() {
       {/* Sticky scroll area */}
       <div
           ref={containerRef}
-          style={{ height: `${steps.length * 100}vh` }}
+          data-sticky-container
+          style={{ height: `${totalHeightVh}vh` }}
           className="relative"
         >
           <div className="sticky top-0 h-screen overflow-hidden">

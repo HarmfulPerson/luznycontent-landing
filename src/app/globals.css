@@ -82,6 +82,17 @@ body {
   to { opacity: 1; transform: scale(1); }
 }
 
+@keyframes cardDealIn {
+  0% {
+    opacity: 0;
+    transform: rotateY(-40deg) rotateX(10deg) translateX(-60px) translateZ(-100px) scale(0.7);
+  }
+  100% {
+    opacity: 1;
+    transform: rotateY(var(--idle-ry, 0deg)) rotateZ(var(--idle-rz, 0deg)) translateY(var(--idle-y, 0px)) scale(1);
+  }
+}
+
 /* Logo-style spaced caps for "CONTENT" */
 .spaced-caps {
   letter-spacing: 0.35em;
