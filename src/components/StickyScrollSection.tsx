@@ -215,7 +215,16 @@ let _setOpenVideo: ((src: string | null) => void) | null = null;
 // Each card shift = one "scroll unit" worth of scrolling (weight=5, so 5 units total,
 // 4 for swaps + 0.5 idle start + 0.5 idle end).
 
-const allVideos = [1, 2, 3, 4, 5, 6, 7, 8];
+const allVideos = [
+  { num: 1, title: 'Skincare Routine', cat: 'UGC' },
+  { num: 2, title: 'Product Review', cat: 'UGC' },
+  { num: 3, title: 'Fashion Haul', cat: 'UGC' },
+  { num: 4, title: 'Brand Unboxing', cat: 'UGC' },
+  { num: 5, title: 'Get Ready With Me', cat: 'Reels' },
+  { num: 6, title: 'Day in My Life', cat: 'Reels' },
+  { num: 7, title: 'Makeup Tutorial', cat: 'UGC' },
+  { num: 8, title: 'Lifestyle Content', cat: 'Reels' },
+];
 
 function VideoSwapCards() {
   const [progress, setProgress] = useState(0);
@@ -280,15 +289,15 @@ function VideoSwapCards() {
       <div className="relative w-full overflow-hidden" style={{ height: '58vh' }}>
         {/* Inner — with horizontal margins so cards don't touch edges */}
         <div className="absolute inset-0" style={{ left: '5%', right: '5%', width: '90%' }}>
-          {allVideos.map((num, i) => {
+          {allVideos.map((vid, i) => {
             const slotPosition = i - offset;
             const isInView = slotPosition >= -0.5 && slotPosition < 4.5;
 
             return (
               <button
-                key={num}
+                key={vid.num}
                 type="button"
-                onClick={() => _setOpenVideo?.(`/videos/ugc-${num}.mp4`)}
+                onClick={() => _setOpenVideo?.(`/videos/ugc-${vid.num}.mp4`)}
                 className="absolute top-0 cursor-pointer group"
                 style={{
                   left: `calc(${slotPosition * 25}% + ${slotPosition * GAP * 0.75}px)`,
@@ -305,15 +314,29 @@ function VideoSwapCards() {
                     transition: 'opacity 300ms ease, transform 300ms ease',
                   }}
                 >
-                  <video src={`/videos/ugc-${num}.mp4`} poster={`/videos/thumb-${num}.jpg`} muted playsInline preload="metadata"
+                  <video src={`/videos/ugc-${vid.num}.mp4`} poster={`/videos/thumb-${vid.num}.jpg`} muted playsInline preload="metadata"
                     className="absolute inset-0 w-full h-full object-cover" style={{ pointerEvents: 'none' }} />
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/30 pointer-events-none" />
-                  {/* Subtle play icon — small, transparent */}
-                  <div className="absolute bottom-4 right-4 pointer-events-none opacity-40 group-hover:opacity-80 transition-opacity duration-300">
-                    <div className="w-9 h-9 bg-white/70 rounded-full flex items-center justify-center backdrop-blur-sm">
-                      <span className="material-symbols-outlined text-[var(--color-brand-brown)]/80 text-lg ml-0.5">play_arrow</span>
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/40 pointer-events-none" />
+
+                  {/* Label with title + blob decoration */}
+                  <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 pt-10 bg-gradient-to-t from-black/50 via-black/20 to-transparent pointer-events-none">
+                    <span className="text-white/80 text-xs font-medium tracking-[0.2em] uppercase block">
+                      {vid.title}
+                    </span>
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <div className="w-1.5 h-1.5 bg-[var(--color-primary)]/60 blob-shape shrink-0" />
+                      <div className="w-5 h-[1px] bg-[var(--color-primary)]/40" />
+                      <span className="text-white/40 text-[10px] tracking-[0.15em] uppercase">{vid.cat}</span>
                     </div>
                   </div>
+
+                  {/* Subtle play icon */}
+                  <div className="absolute bottom-4 right-4 pointer-events-none opacity-30 group-hover:opacity-70 transition-opacity duration-300">
+                    <div className="w-8 h-8 bg-white/60 rounded-full flex items-center justify-center backdrop-blur-sm">
+                      <span className="material-symbols-outlined text-[var(--color-brand-brown)]/70 text-base ml-0.5">play_arrow</span>
+                    </div>
+                  </div>
+
                   {/* Hover ring */}
                   <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-[var(--color-primary)]/30 transition-colors duration-300 pointer-events-none" />
                 </div>
