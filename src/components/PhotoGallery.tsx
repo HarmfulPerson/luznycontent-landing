@@ -24,13 +24,29 @@ export default function PhotoGallery() {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [settled, setSettled] = useState(false);
   const settleTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  // The ONE element that landed under the cursor after a switch — blocked until mouseLeave
   const [blockedIdx, setBlockedIdx] = useState<number | null>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const lastMousePos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const galleryRef = useRef<HTMLDivElement>(null);
 
   const isExpanded = hoveredIdx !== null;
+
+  // Reset when pointer-events are removed (parent step scrolled away)
+  useEffect(() => {
+    const el = galleryRef.current;
+    if (!el) return;
+
+    const onPointerLeave = () => {
+      setHoveredIdx(null);
+      setSettled(false);
+      setBlockedIdx(null);
+      clearTimeout(settleTimer.current);
+    };
+
+    // pointerleave fires when parent gets pointer-events:none
+    el.addEventListener('pointerleave', onPointerLeave);
+    return () => el.removeEventListener('pointerleave', onPointerLeave);
+  }, []);
 
   useEffect(() => {
     clearTimeout(settleTimer.current);
@@ -60,7 +76,7 @@ export default function PhotoGallery() {
   }, [hoveredIdx]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-full max-w-6xl mx-auto px-8">
+    <div ref={galleryRef} className="flex flex-col items-center justify-center h-full max-w-6xl mx-auto px-8">
       <div className="text-center mb-10">
         <span className="text-[var(--color-primary)] text-xs font-semibold tracking-[0.3em] uppercase">Wybrane realizacje</span>
         <h2 className="text-4xl lg:text-5xl font-black serif-heading uppercase text-[var(--color-brand-brown)] mt-2">Portfolio Foto</h2>

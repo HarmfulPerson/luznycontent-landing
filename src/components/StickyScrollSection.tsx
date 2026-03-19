@@ -257,20 +257,23 @@ function VideoThumb({ src }: { src: string }) {
     <button
       type="button"
       onClick={() => _setOpenVideo?.(src)}
-      className="aspect-[9/16] bg-neutral-900 rounded-2xl overflow-hidden relative cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-[var(--color-primary)]/20 hover:ring-2 hover:ring-[var(--color-primary)]/40 hover:scale-[1.03] block w-full"
+      className="aspect-[9/16] relative cursor-pointer block w-full group"
     >
-      <video
-        src={src}
-        muted
-        playsInline
-        preload="metadata"
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ pointerEvents: 'none' }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40" />
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-xl backdrop-blur-sm">
-          <span className="material-symbols-outlined text-[var(--color-primary)] text-2xl ml-0.5">play_arrow</span>
+      {/* Inner card — this moves on hover, but button (hit area) stays in place */}
+      <div className="absolute inset-0 bg-neutral-900 rounded-2xl overflow-hidden transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-2xl group-hover:shadow-[var(--color-primary)]/20 group-hover:ring-2 group-hover:ring-[var(--color-primary)]/40">
+        <video
+          src={src}
+          muted
+          playsInline
+          preload="metadata"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ pointerEvents: 'none' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-xl backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
+            <span className="material-symbols-outlined text-[var(--color-primary)] text-2xl ml-0.5">play_arrow</span>
+          </div>
         </div>
       </div>
     </button>
@@ -506,7 +509,6 @@ const StepContent = memo(function StepContent({ index }: { index: number }) {
 });
 
 function StepLayers({ activeStep }: { activeStep: number }) {
-  // Render all steps once — they stay mounted, only CSS changes
   return (
     <>
       {steps.map((step, i) => {
@@ -516,18 +518,24 @@ function StepLayers({ activeStep }: { activeStep: number }) {
 
         return (
           <div key={i}
-            className="absolute inset-0 flex items-center justify-center"
+            className="absolute inset-0"
             style={{
               opacity: isCurrent ? 1 : 0,
               transform: isCurrent
-                ? 'translateX(0) rotate(0deg) scale(1) translateZ(0)'
+                ? 'none'
                 : isPast
-                  ? 'translateX(-120px) rotate(-3deg) scale(0.92) translateZ(0)'
-                  : 'translateX(120px) rotate(3deg) scale(0.92) translateZ(0)',
+                  ? 'translate3d(-100px,0,0)'
+                  : 'translate3d(100px,0,0)',
+              // Active layer on top, others behind — prevents click interception
+              zIndex: isCurrent ? 10 : 0,
+              // Only active layer receives pointer events
               pointerEvents: isCurrent ? 'auto' : 'none',
+              // Hide far layers completely from rendering
+              display: isNear ? 'flex' : 'none',
+              alignItems: 'center',
+              justifyContent: 'center',
               color: step.bg === 'var(--color-brand-dark)' ? 'white' : 'var(--color-brand-dark)',
-              transition: 'opacity 700ms cubic-bezier(0.4,0,0.2,1), transform 700ms cubic-bezier(0.4,0,0.2,1)',
-              visibility: isNear ? 'visible' : 'hidden',
+              transition: isNear ? 'opacity 500ms ease, transform 500ms ease' : 'none',
             }}
           >
             <div className="w-full h-full flex items-center justify-center">
@@ -560,11 +568,9 @@ export default function StickyScrollSection() {
           className="relative"
         >
           <div className="sticky top-0 h-screen overflow-hidden">
-            {/* Background layers */}
-            {steps.map((step, i) => (
-              <div key={i} className="absolute inset-0 transition-opacity duration-700"
-                style={{ background: step.bg, opacity: i === activeStep ? 1 : 0, zIndex: i === activeStep ? 1 : 0 }} />
-            ))}
+            {/* Background — single div, instant color switch */}
+            <div className="absolute inset-0 transition-[background-color] duration-600 ease-out"
+              style={{ backgroundColor: steps[activeStep]?.bg ?? 'var(--color-brand-cream)' }} />
 
             {/* Animated organic blobs — lerp-smoothed, 60fps via rAF */}
             <AnimatedBlobs containerRef={containerRef} />
