@@ -58,10 +58,14 @@ export default function PhotoPortfolio() {
                 {photo.label}
               </span>
             </div>
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[var(--color-brand-dark)]/70 to-transparent p-4 md:hidden">
-              <span className="text-white text-sm font-bold tracking-widest uppercase">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent px-5 pb-5 pt-12 md:hidden">
+              <span className="text-white/80 text-xs font-medium tracking-[0.2em] uppercase block">
                 {photo.label}
               </span>
+              <div className="flex items-center gap-1.5 mt-2">
+                <div className="w-1.5 h-1.5 bg-[var(--color-primary)]/60 blob-shape shrink-0" />
+                <div className="w-8 h-[1px] bg-[var(--color-primary)]/40" />
+              </div>
             </div>
           </div>
         ))}

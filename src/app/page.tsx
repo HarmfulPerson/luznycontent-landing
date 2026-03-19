@@ -1,5 +1,6 @@
 import Navbar from '@/components/Navbar';
 import ScrollProgressBar from '@/components/ScrollProgressBar';
+import StickyScrollSection from '@/components/StickyScrollSection';
 import Hero from '@/components/Hero';
 import About from '@/components/About';
 import VideoPortfolio from '@/components/VideoPortfolio';
@@ -14,14 +15,23 @@ export default function Home() {
     <>
       <ScrollProgressBar />
       <Navbar />
-      <Hero />
-      <About />
-      <VideoPortfolio />
-      <PhotoPortfolio />
-      <Services />
-      <Collaborations />
-      <Contact />
-      <Footer />
+
+      {/* Mobile: original components with scroll animations */}
+      <div className="md:hidden">
+        <Hero />
+        <About />
+        <Services />
+        <VideoPortfolio />
+        <PhotoPortfolio />
+        <Collaborations />
+        <Contact />
+        <Footer />
+      </div>
+
+      {/* Desktop: sticky scroll storytelling */}
+      <div className="hidden md:block">
+        <StickyScrollSection />
+      </div>
     </>
   );
 }

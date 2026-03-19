@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useReveal } from '@/hooks/useScrollAnimations';
 import TextReveal from './TextReveal';
+import VideoPlayer from './VideoPlayer';
 
 interface VideoItem {
   id: string;
@@ -25,103 +26,54 @@ const videos: VideoItem[] = [
 const categories = ['Wszystkie', 'UGC', 'Reels'];
 
 function VideoCard({ video, index, isVisible }: { video: VideoItem; index: number; isVisible: boolean }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [playing, setPlaying] = useState(false);
-  const [muted, setMuted] = useState(true);
-
-  const handleMouseEnter = () => {
-    if (videoRef.current) {
-      videoRef.current.play().catch(() => {});
-      setPlaying(true);
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
-      setPlaying(false);
-      setMuted(true);
-      videoRef.current.muted = true;
-    }
-  };
-
-  const togglePlay = () => {
-    if (!videoRef.current) return;
-    if (videoRef.current.paused) {
-      videoRef.current.play().catch(() => {});
-      setPlaying(true);
-    } else {
-      videoRef.current.pause();
-      setPlaying(false);
-    }
-  };
-
-  const toggleMute = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!videoRef.current) return;
-    videoRef.current.muted = !videoRef.current.muted;
-    setMuted(videoRef.current.muted);
-  };
+  const [open, setOpen] = useState(false);
 
   return (
-    <div
-      className="group cursor-pointer transition-all duration-700 ease-out"
-      style={{
-        transform: isVisible ? 'translateY(0) scale(1)' : 'translateY(60px) scale(0.9)',
-        opacity: isVisible ? 1 : 0,
-        transitionDelay: `${400 + index * 100}ms`,
-      }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      <div className="relative aspect-[9/16] bg-neutral-900 rounded-2xl overflow-hidden shadow-lg border-4 border-white group-hover:shadow-2xl group-hover:-translate-y-3 group-hover:shadow-[var(--color-primary)]/20 transition-all duration-500">
-        <video
-          ref={videoRef}
-          src={video.src}
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 z-10" />
-
-        {/* Play button — hidden when playing */}
-        <div
-          className="absolute inset-0 flex items-center justify-center z-20 transition-opacity duration-300"
-          style={{ opacity: playing ? 0 : 1, pointerEvents: playing ? 'none' : 'auto' }}
-          onClick={togglePlay}
-        >
-          <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:bg-[var(--color-primary)] transition-all duration-300">
-            <span className="material-symbols-outlined text-[var(--color-primary)] group-hover:text-white text-2xl ml-1 transition-colors">play_arrow</span>
-          </div>
-        </div>
-
-        {/* Mute/unmute button — visible when playing */}
+    <>
+      <div
+        className="transition-all duration-700 ease-out"
+        style={{
+          transform: isVisible ? 'translateY(0) scale(1)' : 'translateY(60px) scale(0.9)',
+          opacity: isVisible ? 1 : 0,
+          transitionDelay: `${400 + index * 100}ms`,
+        }}
+      >
         <button
-          onClick={toggleMute}
-          className="absolute top-3 right-3 z-30 w-9 h-9 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/60 transition-all duration-200 cursor-pointer"
-          style={{ opacity: playing ? 1 : 0, pointerEvents: playing ? 'auto' : 'none' }}
+          type="button"
+          onClick={() => setOpen(true)}
+          className="relative w-full aspect-[9/16] bg-neutral-900 rounded-2xl overflow-hidden shadow-lg border-4 border-white cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:ring-2 hover:ring-[var(--color-primary)]/40 hover:scale-[1.02] block"
         >
-          <span className="material-symbols-outlined text-white text-lg">
-            {muted ? 'volume_off' : 'volume_up'}
-          </span>
-        </button>
+          <video
+            src={video.src}
+            muted
+            playsInline
+            preload="metadata"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ pointerEvents: 'none' }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40" />
 
-        {/* Label — always visible on mobile, hover on desktop */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 z-20 transform md:translate-y-1 md:group-hover:translate-y-0 transition-transform duration-300">
-          <span className="text-white text-xs font-bold uppercase tracking-wider bg-[var(--color-primary)]/80 px-2 py-1 rounded">
-            {video.category}
-          </span>
-          <p className="text-white text-sm font-medium mt-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
-            {video.title}
-          </p>
-        </div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-xl backdrop-blur-sm">
+              <span className="material-symbols-outlined text-[var(--color-primary)] text-2xl ml-0.5">play_arrow</span>
+            </div>
+          </div>
+
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent px-4 pb-4 pt-10 text-left">
+            <span className="text-white/80 text-xs font-medium tracking-[0.2em] uppercase block">
+              {video.title}
+            </span>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <div className="w-1.5 h-1.5 bg-[var(--color-primary)]/60 blob-shape shrink-0" />
+              <div className="w-5 h-[1px] bg-[var(--color-primary)]/40" />
+              <span className="text-white/50 text-[10px] tracking-[0.15em] uppercase">{video.category}</span>
+            </div>
+          </div>
+        </button>
       </div>
-    </div>
+
+      {open && <VideoPlayer src={video.src} onClose={() => setOpen(false)} />}
+    </>
   );
 }
 
@@ -144,10 +96,11 @@ export default function VideoPortfolio() {
             staggerMs={60}
           />
           <p
-            className="text-[var(--color-primary)] tracking-widest uppercase text-sm mt-4 transition-all duration-500"
+            className="text-[var(--color-brand-brown)]/30 text-xs tracking-[0.15em] uppercase mt-4 flex items-center justify-center gap-2 transition-all duration-500"
             style={{ opacity: isVisible ? 1 : 0, transitionDelay: '400ms' }}
           >
-            Najedź aby odtworzyć
+            <span className="material-symbols-outlined text-sm">play_circle</span>
+            kliknij aby odtworzyć
           </p>
         </div>
 
